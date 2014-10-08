@@ -1,7 +1,6 @@
 import re
 import csv
 from math import log
-from collections import Counter
 
 csv_file = open("decisions.csv", "a+")
 csvreader = csv.reader(csv_file)
@@ -36,11 +35,23 @@ except:
   d9 = dict()
   d10 = dict()
 
-
+correct = [0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0]
 dicts = [d1, d2, d3, d4, d5, d6, d7, d8, d9, d10]
 
 testString = open("sample_text.txt", "r").read()
 m = re.findall("(.{5})([\.?!] )(.{5})", testString)
+
+
+# save the dicts
+def writeResults():
+  for i in range(10):
+    f = open(str(i+1) + ".txt", "w+")
+    f.write(str(dicts[i]))
+    f.close()
+
+  f = open("correct.txt", "w+")
+  f.write(str(correct))
+  f.close()
 
 
 def freq(c,examples):
@@ -62,24 +73,25 @@ def info(examples):
         pass
     return -1*result
 
-def probabilistic_decision(arr, thresh=20.0):
+
+def probabilistic_decision(arr, thresh=0.0):
   temp_sum = 0.0
   for i in range(10):
     key = arr[i]
     try:
       s = sum(dicts[i][key])/float(len(dicts[i][key]))
       if s < 0.5:
-        s *= -1
+        s -= 1
       if s == 0:
         s = -1
       temp_sum += (100 - info(dicts[i][key])) * s
     except KeyError:
-      print "previously unencountered key at position " + str(i)
-  prob = (temp_sum / 10.0)
+      pass
+  prob = (temp_sum / 10.0) - 9.0
   if prob >= thresh:
-    return True, prob
+    return 1, prob
   else:
-    return False, prob
+    return 0, prob
 
 
 def user_decision():
@@ -89,28 +101,25 @@ def user_decision():
   elif s == "n":
     return 0
   elif s == "q":
-    for i in range(10):
-      f = open(str(i+1) + ".txt", "w+")
-      f.write(str(dicts[i]))
+    writeResults()
     quit()
   else:
     return user_decision()
 
 right = 0
 wrong = 0
-
 for tuple in m:
   print tuple[0] + tuple[1] + tuple[2]
   ten_char = tuple[0] + tuple[2]
   dec = probabilistic_decision(ten_char)
   print dec
   replace = user_decision()
-  if dec[0] == True and replace == 1:
+  correct.append(replace)
+
+  if dec[0] == replace:
     right += 1
-  elif dec[0] == False and replace == 0:
-    right +=1
   else:
-    wrong +=1
+    wrong += 1
 
   print "Right: " + str(right) + ". Wrong: " + str(wrong) + "."
   csv_data = list(ten_char)
@@ -122,8 +131,4 @@ for tuple in m:
     else:
       dicts[i][ten_char[i]] = [replace]
 
-
-# save the dicts
-for i in range(10):
-  f = open(str(i+1) + ".txt", "w+")
-  f.write(str(dicts[i]))
+writeResults()
